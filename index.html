@@ -108,6 +108,7 @@
         <div id="btnJump" class="control-btn">점프</div>
     </div>
     
+    <!-- 💡 게임 오버 화면 (다시 하기 & 처음으로 버튼 배치) -->
     <div id="gameOverScreen">
         <div id="goTitle">게임 오버!</div>
         <div id="goScore">최종 기록: 0m</div>
@@ -198,6 +199,7 @@
         document.getElementById('btnRestart').addEventListener('click', () => location.reload());
         document.getElementById('btnRestart').addEventListener('touchstart', (e) => { e.preventDefault(); location.reload(); }, {passive: false});
 
+        // 💡 처음으로 돌아가는 버튼 이벤트 핸들러
         function goHome(e) {
             e.preventDefault();
             if (document.fullscreenElement && document.exitFullscreen) {
@@ -232,37 +234,6 @@
         function getKSTClock() {
             return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(new Date());
         }
-
-        // 💡 캔버스 내부 터치 좌표를 이용해 인게임 '처음으로' 버튼 처리 (우측 상단 시계 아래에 배치)
-        const homeBtnArea = { x: 0, y: 15, width: 110, height: 35 };
-        
-        canvas.addEventListener('click', (e) => {
-            if (!gameStarted || isGameOver) return;
-            const rect = canvas.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const clickY = e.clientY - rect.top;
-            
-            // 우측 상단 '처음으로' 버튼 영역 클릭 감지 (시계 왼쪽 편)
-            let btnX = canvas.width - 220;
-            let btnY = 15;
-            if (clickX >= btnX && clickX <= btnX + 110 && clickY >= btnY && clickY <= btnY + 35) {
-                goHome(e);
-            }
-        });
-
-        canvas.addEventListener('touchstart', (e) => {
-            if (!gameStarted || isGameOver) return;
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            const clickX = touch.clientX - rect.left;
-            const clickY = touch.clientY - rect.top;
-            
-            let btnX = canvas.width - 220;
-            let btnY = 15;
-            if (clickX >= btnX && clickX <= btnX + 110 && clickY >= btnY && clickY <= btnY + 35) {
-                goHome(e);
-            }
-        }, {passive: true});
 
         function update() {
             if (!gameStarted || isGameOver) return;
@@ -476,7 +447,7 @@
                 ctx.drawImage(images.effect_sparkle, effectX, effectY, 30, 30);
             }
 
-            // 💡 왼쪽 위 UI (거리, 체력바, 상태) 원래 깔끔한 배치로 복구
+            // 💡 왼쪽 위 UI (거리, 체력바, 상태) 원래 깔끔한 배치
             ctx.fillStyle = 'white'; ctx.font = 'bold 22px Arial'; ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
             
             ctx.textAlign = 'left';
@@ -491,24 +462,11 @@
             ctx.fillRect(75, 57, 180 * (hpPercent / 100), 20);
             ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.strokeRect(75, 57, 180, 20);
 
-            // 💡 우측 상단 KST 시계 및 '처음으로' 인게임 버튼 렌더링
+            // 💡 우측 상단 KST 시계 렌더링
             ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
             ctx.textAlign = 'right';
             ctx.font = 'bold 20px Arial';
             ctx.fillText(`⏰ ${getKSTClock()}`, canvas.width - 20, 40);
-
-            // 인게임 '처음으로' 버튼 그림자 및 테두리 박스
-            let hbX = canvas.width - 220;
-            let hbY = 15;
-            ctx.fillStyle = 'rgba(52, 152, 219, 0.8)';
-            ctx.fillRect(hbX, hbY, 110, 35);
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(hbX, hbY, 110, 35);
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 16px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('🏠 처음으로', hbX + 55, hbY + 23);
         }
 
         function loop() { update(); draw(); requestAnimationFrame(loop); }
