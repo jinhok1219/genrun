@@ -7,13 +7,13 @@
     <meta property="og:title" content="GEN RUN">
     <meta property="og:description" content="재미있는 웹 런닝 게임!">
     <style>
-        /* 💡 모바일 화면 꽉 참 및 스크롤 방지 스타일 */
+        /* 💡 모바일 화면 완벽 전체화면 고정 스타일 */
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            background-color: #111;
+            background-color: #000;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -22,17 +22,17 @@
             touch-action: none;
         }
         
-        /* 💡 캔버스가 모바일 화면 가로/세로 비율에 맞춰 꽉 차게 반응하도록 수정 */
+        /* 💡 캔버스가 스마트폰 화면에 완벽하게 꽉 차도록 확장 */
         canvas {
-            width: 100vw;
-            height: 100vh;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: fill; /* 여백 없이 화면에 꽉 채우기 */
             background-color: #0066cc;
         }
 
         #controls { 
             position: absolute; 
-            bottom: 10%; 
+            bottom: 8%; 
             width: 100%; 
             max-width: 800px; 
             display: flex; 
@@ -118,6 +118,14 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
+        // 💡 화면 크기에 맞춰 캔버스 내부 해상도 동적 조절
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
         const imageSources = {
             bg: 'bg.jpg',
             tile: 'tile.png',
@@ -145,26 +153,33 @@
 
         let gameStarted = false;
         let isGameOver = false;
-        let baseSpeed = 4.0;
+        let baseSpeed = 4.0; // 기본 속도
         let gameSpeed = baseSpeed; 
         let distance = 0;
         let frameCount = 0;
         let bgX = 0; 
-        const groundY = 240; 
+        
+        let groundY = canvas.height - 210; // 화면 높이에 맞춰 바닥 위치 자동 계산
         let aniFrame = 0;
 
         const player = {
-            x: 100, y: 190, width: 50, height: 50,
-            vy: 0, gravity: 0.6, jumpPower: -11,
+            x: 100, y: 0, width: 60, height: 60,
+            vy: 0, gravity: 0.6, jumpPower: -12,
             isJumping: false, isSliding: false,
             jumpCount: 0, maxJumps: 2, 
             hp: 100, maxHp: 100, shield: false, invincible: 0,
             eatTimer: 0, hitTimer: 0
         };
 
-        let platforms = [{ x: 0, y: groundY, width: 800, height: 40 }];
+        let platforms = [];
         let obstacles = [];
         let items = [];
+
+        function initGame() {
+            groundY = canvas.height - 180;
+            player.y = groundY - player.height;
+            platforms = [{ x: 0, y: groundY, width: canvas.width * 2, height: 40 }];
+        }
 
         function doJump(e) { 
             e.preventDefault(); 
@@ -194,11 +209,11 @@
 
         function startGame(e) {
             e.preventDefault();
+            initGame();
             startScreen.style.display = 'none';
             controls.style.display = 'flex';
             gameStarted = true;
             
-            // 모바일 전체화면 시도 (지원되는 브라우저인 경우)
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(() => {});
             }
@@ -223,7 +238,7 @@
             frameCount++;
             if(frameCount % 5 === 0) aniFrame++; 
             
-            player.hp -= 0.04; 
+            player.hp -= 0.04; // 체력 감소 속도
             
             if (player.invincible > 0) player.invincible--;
             if (player.eatTimer > 0) player.eatTimer--;
@@ -257,7 +272,7 @@
             if (platforms.length === 0 || platforms[platforms.length - 1].x < canvas.width - 250) {
                 let lastP = platforms[platforms.length - 1];
                 let gap = Math.random() > 0.4 ? Math.random() * 120 + 80 : 0; 
-                let width = Math.random() * 200 + 250;
+                let width = Math.random() * 200 + 300;
                 platforms.push({ x: lastP ? lastP.x + lastP.width + gap : 0, y: groundY, width: width, height: 40 });
             }
             platforms.forEach(p => p.x -= gameSpeed);
@@ -270,9 +285,9 @@
                 let isDouble = !isAir && Math.random() > 0.5; 
                 
                 let imgKey = isDouble ? 'obs2' : 'obs1';
-                let obsW = 40;
-                let obsH = isDouble ? 80 : 40; 
-                let obsY = isAir ? groundY - 70 : groundY - obsH; 
+                let obsW = 45;
+                let obsH = isDouble ? 90 : 45; 
+                let obsY = isAir ? groundY - 75 : groundY - obsH; 
                 
                 obstacles.push({ x: canvas.width, y: obsY, width: obsW, height: obsH, isAir: isAir, imgKey: imgKey }); 
             }
@@ -306,7 +321,7 @@
             if (frameCount % 250 === 0) {
                 let rand = Math.random(); 
                 let type = rand > 0.9 ? 'rainbow' : (rand > 0.8 ? 'gold' : 'normal');
-                items.push({ x: canvas.width, y: groundY - 110 - Math.random() * 40, width: 40, height: 40, type: type });
+                items.push({ x: canvas.width, y: groundY - 130 - Math.random() * 40, width: 45, height: 45, type: type });
             }
             for (let i = 0; i < items.length; i++) {
                 let item = items[i]; item.x -= gameSpeed;
@@ -360,8 +375,10 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (isReady(images.bg)) {
-                ctx.drawImage(images.bg, bgX, 0, canvas.width, canvas.height);
-                ctx.drawImage(images.bg, bgX + canvas.width, 0, canvas.width, canvas.height);
+                // 배경을 화면 전체에 꽉 차게 반복 그리기
+                let bgW = canvas.width;
+                ctx.drawImage(images.bg, bgX, 0, bgW, canvas.height);
+                ctx.drawImage(images.bg, bgX + bgW, 0, bgW, canvas.height);
             }
 
             platforms.forEach(p => {
@@ -443,7 +460,7 @@
         }
 
         function loop() { update(); draw(); requestAnimationFrame(loop); }
-        window.onload = () => { loop(); };
+        window.onload = () => { initGame(); loop(); };
     </script>
 </body>
 </html>
