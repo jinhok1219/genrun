@@ -7,7 +7,6 @@
     <meta property="og:title" content="GEN RUN">
     <meta property="og:description" content="재미있는 웹 런닝 게임!">
     <style>
-        /* 💡 모바일 화면 여백 없이 완벽하게 꽉 채우기 */
         html, body {
             margin: 0;
             padding: 0;
@@ -22,6 +21,7 @@
             touch-action: none;
         }
         
+        /* 💡 화면 크기에 맞춰 꽉 차게 조절되도록 수정 */
         canvas {
             width: 100vw;
             height: 100vh;
@@ -125,8 +125,13 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        canvas.width = Math.max(window.innerWidth, window.innerHeight);
-        canvas.height = Math.min(window.innerWidth, window.innerHeight);
+        // 💡 화면 크기 비율 실시간 반영 함수
+        function resizeGame() {
+            canvas.width = Math.max(window.innerWidth, window.innerHeight);
+            canvas.height = Math.min(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', resizeGame);
+        resizeGame();
 
         const imageSources = {
             bg: 'bg.jpg',
@@ -161,11 +166,11 @@
         let frameCount = 0;
         let bgX = 0; 
         
-        const groundY = canvas.height - 180; 
+        let groundY = canvas.height - 180; 
         let aniFrame = 0;
 
         const player = {
-            x: 100, y: groundY - 60, width: 60, height: 60,
+            x: 100, y: 0, width: 60, height: 60,
             vy: 0, gravity: 0.6, jumpPower: -12,
             isJumping: false, isSliding: false,
             jumpCount: 0, maxJumps: 2, 
@@ -173,9 +178,16 @@
             eatTimer: 0, hitTimer: 0
         };
 
-        let platforms = [{ x: 0, y: groundY, width: canvas.width * 2, height: 40 }];
+        let platforms = [];
         let obstacles = [];
         let items = [];
+
+        function initGameValues() {
+            resizeGame();
+            groundY = canvas.height - 180;
+            player.y = groundY - player.height;
+            platforms = [{ x: 0, y: groundY, width: canvas.width * 2, height: 40 }];
+        }
 
         function doJump(e) { 
             e.preventDefault(); 
@@ -196,9 +208,18 @@
         btnSlide.addEventListener('touchstart', startSlide, {passive: false}); btnSlide.addEventListener('mousedown', startSlide);
         ['touchend', 'mouseup', 'mouseleave'].forEach(evt => btnSlide.addEventListener(evt, endSlide, {passive: false}));
         
-        document.getElementById('btnRestart').addEventListener('click', () => location.reload());
-        document.getElementById('btnRestart').addEventListener('touchstart', (e) => { e.preventDefault(); location.reload(); }, {passive: false});
+        // 다시 하기 버튼
+        document.getElementById('btnRestart').addEventListener('click', () => {
+            initGameValues();
+            location.reload();
+        });
+        document.getElementById('btnRestart').addEventListener('touchstart', (e) => { 
+            e.preventDefault(); 
+            initGameValues();
+            location.reload(); 
+        }, {passive: false});
 
+        // 처음으로 버튼
         function goHome(e) {
             e.preventDefault();
             if (document.fullscreenElement && document.exitFullscreen) {
@@ -215,6 +236,7 @@
 
         function startGame(e) {
             e.preventDefault();
+            initGameValues();
             startScreen.style.display = 'none';
             controls.style.display = 'flex';
             gameStarted = true;
@@ -467,7 +489,10 @@
         }
 
         function loop() { update(); draw(); requestAnimationFrame(loop); }
-        window.onload = () => { loop(); };
+        window.onload = () => { 
+            initGameValues();
+            loop(); 
+        };
     </script>
 </body>
 </html>
