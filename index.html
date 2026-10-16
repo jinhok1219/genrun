@@ -90,12 +90,8 @@
         #btnHome { background-color: #3498db; }
         #btnHome:active { background-color: #2980b9; }
 
-        /* 💡 게임 플레이 중 누를 수 있는 상단 홈 버튼 스타일 */
-        #inGameHome { position: absolute; top: 15px; right: 230px; padding: 6px 14px; font-size: 14px; font-weight: bold; color: white; background-color: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.8); border-radius: 15px; cursor: pointer; z-index: 50; display: none; }
-        #inGameHome:active { background-color: rgba(255,255,255,0.3); }
-
         #portraitWarning { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #111; color: white; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; font-family: 'Arial', sans-serif; font-size: 24px; font-weight: bold; text-align: center; line-height: 1.5; }
-        @media screen and (orientation: portrait) { #portraitWarning { display: flex; } #gameCanvas, #controls, #gameOverScreen, #startScreen, #inGameHome { display: none !important; } }
+        @media screen and (orientation: portrait) { #portraitWarning { display: flex; } #gameCanvas, #controls, #gameOverScreen, #startScreen { display: none !important; } }
     </style>
 </head>
 <body>
@@ -106,9 +102,6 @@
         <div id="startDesc">장애물을 피하고 똥을 모아 끝까지 달려보세요!</div>
         <button id="btnStart">게임 시작 ▶</button>
     </div>
-
-    <!-- 💡 게임 도중 누르는 홈 버튼 -->
-    <button id="inGameHome">🏠 처음으로</button>
 
     <div id="controls">
         <div id="btnSlide" class="control-btn">슬라이드</div>
@@ -205,7 +198,6 @@
         document.getElementById('btnRestart').addEventListener('click', () => location.reload());
         document.getElementById('btnRestart').addEventListener('touchstart', (e) => { e.preventDefault(); location.reload(); }, {passive: false});
 
-        // 💡 전체화면 해제 및 처음 화면으로 돌아가는 함수
         function goHome(e) {
             e.preventDefault();
             if (document.fullscreenElement && document.exitFullscreen) {
@@ -215,19 +207,15 @@
         }
         document.getElementById('btnHome').addEventListener('click', goHome);
         document.getElementById('btnHome').addEventListener('touchstart', goHome, {passive: false});
-        document.getElementById('inGameHome').addEventListener('click', goHome);
-        document.getElementById('inGameHome').addEventListener('touchstart', goHome, {passive: false});
 
         const startScreen = document.getElementById('startScreen');
         const btnStart = document.getElementById('btnStart');
         const controls = document.getElementById('controls');
-        const inGameHome = document.getElementById('inGameHome');
 
         function startGame(e) {
             e.preventDefault();
             startScreen.style.display = 'none';
             controls.style.display = 'flex';
-            inGameHome.style.display = 'block';
             gameStarted = true;
             
             if (document.documentElement.requestFullscreen) {
@@ -244,6 +232,37 @@
         function getKSTClock() {
             return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(new Date());
         }
+
+        // 💡 캔버스 내부 터치 좌표를 이용해 인게임 '처음으로' 버튼 처리 (우측 상단 시계 아래에 배치)
+        const homeBtnArea = { x: 0, y: 15, width: 110, height: 35 };
+        
+        canvas.addEventListener('click', (e) => {
+            if (!gameStarted || isGameOver) return;
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            // 우측 상단 '처음으로' 버튼 영역 클릭 감지 (시계 왼쪽 편)
+            let btnX = canvas.width - 220;
+            let btnY = 15;
+            if (clickX >= btnX && clickX <= btnX + 110 && clickY >= btnY && clickY <= btnY + 35) {
+                goHome(e);
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (!gameStarted || isGameOver) return;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const clickX = touch.clientX - rect.left;
+            const clickY = touch.clientY - rect.top;
+            
+            let btnX = canvas.width - 220;
+            let btnY = 15;
+            if (clickX >= btnX && clickX <= btnX + 110 && clickY >= btnY && clickY <= btnY + 35) {
+                goHome(e);
+            }
+        }, {passive: true});
 
         function update() {
             if (!gameStarted || isGameOver) return;
@@ -363,7 +382,6 @@
             goTime.innerText = `기록 일시: ${getKSTTime()}`;
             document.getElementById('gameOverScreen').style.display = 'flex'; 
             controls.style.display = 'none';
-            inGameHome.style.display = 'none';
         }
 
         function drawSprite(imgKey, x, y, targetW, targetH) {
@@ -458,6 +476,7 @@
                 ctx.drawImage(images.effect_sparkle, effectX, effectY, 30, 30);
             }
 
+            // 💡 왼쪽 위 UI (거리, 체력바, 상태) 원래 깔끔한 배치로 복구
             ctx.fillStyle = 'white'; ctx.font = 'bold 22px Arial'; ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
             
             ctx.textAlign = 'left';
@@ -472,10 +491,24 @@
             ctx.fillRect(75, 57, 180 * (hpPercent / 100), 20);
             ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.strokeRect(75, 57, 180, 20);
 
+            // 💡 우측 상단 KST 시계 및 '처음으로' 인게임 버튼 렌더링
             ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
             ctx.textAlign = 'right';
             ctx.font = 'bold 20px Arial';
             ctx.fillText(`⏰ ${getKSTClock()}`, canvas.width - 20, 40);
+
+            // 인게임 '처음으로' 버튼 그림자 및 테두리 박스
+            let hbX = canvas.width - 220;
+            let hbY = 15;
+            ctx.fillStyle = 'rgba(52, 152, 219, 0.8)';
+            ctx.fillRect(hbX, hbY, 110, 35);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(hbX, hbY, 110, 35);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🏠 처음으로', hbX + 55, hbY + 23);
         }
 
         function loop() { update(); draw(); requestAnimationFrame(loop); }
