@@ -7,7 +7,7 @@
     <meta property="og:title" content="GEN RUN">
     <meta property="og:description" content="재미있는 웹 런닝 게임!">
     <style>
-        /* 💡 모바일 브라우저 여백 완전 차단 및 꽉 찬 화면 고정 */
+        /* 💡 모바일 화면 여백 없이 완벽하게 꽉 채우기 */
         html, body {
             margin: 0;
             padding: 0;
@@ -22,7 +22,6 @@
             touch-action: none;
         }
         
-        /* 💡 화면 크기에 상관없이 무조건 꽉 채우도록 강제 설정 */
         canvas {
             width: 100vw;
             height: 100vh;
@@ -83,10 +82,15 @@
         #gameOverScreen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(60, 70, 80, 0.9); z-index: 100; flex-direction: column; justify-content: center; align-items: center; font-family: 'Arial', sans-serif; }
         #goTitle { font-size: 48px; font-weight: bold; color: white; margin-bottom: 20px; text-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
         #goScore { font-size: 32px; font-weight: bold; color: #ffcc00; margin-bottom: 20px; }
-        #goTime { font-size: 16px; color: #dddddd; margin-bottom: 40px; }
-        #btnRestart { padding: 15px 40px; font-size: 24px; font-weight: bold; color: white; background-color: #e74c3c; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        #btnRestart:active { background-color: #c0392b; }
+        #goTime { font-size: 16px; color: #dddddd; margin-bottom: 30px; }
         
+        .btn-group { display: flex; gap: 15px; }
+        .action-btn { padding: 14px 30px; font-size: 20px; font-weight: bold; color: white; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #btnRestart { background-color: #e74c3c; }
+        #btnRestart:active { background-color: #c0392b; }
+        #btnHome { background-color: #3498db; }
+        #btnHome:active { background-color: #2980b9; }
+
         #portraitWarning { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #111; color: white; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; font-family: 'Arial', sans-serif; font-size: 24px; font-weight: bold; text-align: center; line-height: 1.5; }
         @media screen and (orientation: portrait) { #portraitWarning { display: flex; } #gameCanvas, #controls, #gameOverScreen, #startScreen { display: none !important; } }
     </style>
@@ -109,7 +113,10 @@
         <div id="goTitle">게임 오버!</div>
         <div id="goScore">최종 기록: 0m</div>
         <div id="goTime">기록 일시: </div>
-        <button id="btnRestart">다시 하기 🔄</button>
+        <div class="btn-group">
+            <button id="btnRestart" class="action-btn">다시 하기 🔄</button>
+            <button id="btnHome" class="action-btn">처음으로 🏠</button>
+        </div>
     </div>
     
     <canvas id="gameCanvas"></canvas>
@@ -191,6 +198,16 @@
         
         document.getElementById('btnRestart').addEventListener('click', () => location.reload());
         document.getElementById('btnRestart').addEventListener('touchstart', (e) => { e.preventDefault(); location.reload(); }, {passive: false});
+
+        function goHome(e) {
+            e.preventDefault();
+            if (document.fullscreenElement && document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            }
+            location.reload();
+        }
+        document.getElementById('btnHome').addEventListener('click', goHome);
+        document.getElementById('btnHome').addEventListener('touchstart', goHome, {passive: false});
 
         const startScreen = document.getElementById('startScreen');
         const btnStart = document.getElementById('btnStart');
@@ -329,8 +346,12 @@
         }
 
         function gameOver(reason) {
-            isGameOver = true; goTitle.innerText = reason; goScore.innerText = `최종 기록: ${Math.floor(distance)}m`; goTime.innerText = `기록 일시: ${getKSTTime()}`;
-            document.getElementById('gameOverScreen').style.display = 'flex'; controls.style.display = 'none';
+            isGameOver = true; 
+            goTitle.innerText = reason; 
+            goScore.innerText = `최종 기록: ${Math.floor(distance)}m`; 
+            goTime.innerText = `기록 일시: ${getKSTTime()}`;
+            document.getElementById('gameOverScreen').style.display = 'flex'; 
+            controls.style.display = 'none';
         }
 
         function drawSprite(imgKey, x, y, targetW, targetH) {
