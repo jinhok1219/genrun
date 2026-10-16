@@ -7,6 +7,7 @@
     <meta property="og:title" content="GEN RUN">
     <meta property="og:description" content="재미있는 웹 런닝 게임!">
     <style>
+        /* 💡 여백 없이 화면 전체 강제 고정 */
         html, body {
             margin: 0;
             padding: 0;
@@ -21,11 +22,11 @@
             touch-action: none;
         }
         
-        /* 💡 모바일 화면에 맞춰 꽉 차게 채우는 스타일 */
+        /* 💡 캔버스가 화면 전체를 비율에 맞게 완벽히 채우도록 설정 */
         canvas {
             width: 100vw;
             height: 100vh;
-            object-fit: contain;
+            object-fit: cover;
             background-color: #0066cc;
         }
 
@@ -33,7 +34,7 @@
             position: absolute; 
             bottom: 10%; 
             width: 100%; 
-            max-width: 800px; 
+            max-width: 900px; 
             display: flex; 
             justify-content: space-between; 
             padding: 0 40px; 
@@ -42,8 +43,8 @@
             display: none; 
         }
         .control-btn { 
-            width: 85px; 
-            height: 85px; 
+            width: 90px; 
+            height: 90px; 
             background-color: rgba(100, 100, 100, 0.5); 
             border: 4px solid rgba(255, 255, 255, 0.8); 
             border-radius: 50%; 
@@ -52,7 +53,7 @@
             color: white; 
             text-shadow: 1px 1px 3px black; 
             text-align: center; 
-            line-height: 77px; 
+            line-height: 82px; 
             user-select: none; 
             -webkit-user-select: none; 
             backdrop-filter: blur(4px); 
@@ -111,15 +112,15 @@
         <button id="btnRestart">다시 하기 🔄</button>
     </div>
     
-    <canvas id="gameCanvas" width="800" height="450"></canvas>
+    <canvas id="gameCanvas"></canvas>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // 💡 화면 크기에 맞춘 동적 해상도 설정
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // 💡 가로/세로 중 큰 값을 가로로 확실하게 고정하여 해상도 설정
+        canvas.width = Math.max(window.innerWidth, window.innerHeight);
+        canvas.height = Math.min(window.innerWidth, window.innerHeight);
 
         const imageSources = {
             bg: 'bg.jpg',
@@ -154,12 +155,12 @@
         let frameCount = 0;
         let bgX = 0; 
         
-        const groundY = canvas.height - 210; 
+        const groundY = canvas.height - 180; 
         let aniFrame = 0;
 
         const player = {
-            x: 100, y: groundY - 50, width: 50, height: 50,
-            vy: 0, gravity: 0.6, jumpPower: -11,
+            x: 100, y: groundY - 60, width: 60, height: 60,
+            vy: 0, gravity: 0.6, jumpPower: -12,
             isJumping: false, isSliding: false,
             jumpCount: 0, maxJumps: 2, 
             hp: 100, maxHp: 100, shield: false, invincible: 0,
@@ -260,7 +261,7 @@
             if (platforms.length === 0 || platforms[platforms.length - 1].x < canvas.width - 250) {
                 let lastP = platforms[platforms.length - 1];
                 let gap = Math.random() > 0.4 ? Math.random() * 120 + 80 : 0; 
-                let width = Math.random() * 200 + 250;
+                let width = Math.random() * 200 + 300;
                 platforms.push({ x: lastP ? lastP.x + lastP.width + gap : 0, y: groundY, width: width, height: 40 });
             }
             platforms.forEach(p => p.x -= gameSpeed);
@@ -273,9 +274,9 @@
                 let isDouble = !isAir && Math.random() > 0.5; 
                 
                 let imgKey = isDouble ? 'obs2' : 'obs1';
-                let obsW = 40;
-                let obsH = isDouble ? 80 : 40; 
-                let obsY = isAir ? groundY - 70 : groundY - obsH; 
+                let obsW = 45;
+                let obsH = isDouble ? 90 : 45; 
+                let obsY = isAir ? groundY - 75 : groundY - obsH; 
                 
                 obstacles.push({ x: canvas.width, y: obsY, width: obsW, height: obsH, isAir: isAir, imgKey: imgKey }); 
             }
@@ -309,7 +310,7 @@
             if (frameCount % 250 === 0) {
                 let rand = Math.random(); 
                 let type = rand > 0.9 ? 'rainbow' : (rand > 0.8 ? 'gold' : 'normal');
-                items.push({ x: canvas.width, y: groundY - 110 - Math.random() * 40, width: 40, height: 40, type: type });
+                items.push({ x: canvas.width, y: groundY - 130 - Math.random() * 40, width: 45, height: 45, type: type });
             }
             for (let i = 0; i < items.length; i++) {
                 let item = items[i]; item.x -= gameSpeed;
