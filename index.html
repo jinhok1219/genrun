@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>웹 런닝 게임 - 시작 화면 및 KST 시계 추가</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #222; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; touch-action: none; }
+        canvas { max-width: 100%; max-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.8); background-color: #0066cc; }
+        #controls { position: absolute; bottom: 20%; width: 100%; max-width: 800px; display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; z-index: 10; display: none; }
+        .control-btn { width: 90px; height: 90px; background-color: rgba(100, 100, 100, 0.5); border: 4px solid rgba(255, 255, 255, 0.8); border-radius: 50%; font-size: 18px; font-weight: bold; color: white; text-shadow: 1px 1px 3px black; text-align: center; line-height: 82px; user-select: none; -webkit-user-select: none; backdrop-filter: blur(4px); }
+        .control-btn:active { background-color: rgba(200, 200, 200, 0.7); }
+        
+        /* 💡 시작 화면 스타일 */
+        #startScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('bg.jpg') no-repeat center center; background-size: cover; z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Arial', sans-serif; }
+        #startTitle { font-size: 56px; font-weight: bold; color: white; margin-bottom: 10px; text-shadow: 3px 3px 10px rgba(0,0,0,0.8); text-align: center; }
+        #startDesc { font-size: 20px; color: #ffcc00; margin-bottom: 40px; text-shadow: 2px 2px 5px rgba(0,0,0,0.8); }
+        #btnStart { padding: 18px 50px; font-size: 26px; font-weight: bold; color: white; background-color: #2ecc71; border: none; border-radius: 35px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: transform 0.1s; }
+        #btnStart:active { background-color: #27ae60; transform: scale(0.95); }
+
+        #gameOverScreen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(60, 70, 80, 0.9); z-index: 100; flex-direction: column; justify-content: center; align-items: center; font-family: 'Arial', sans-serif; }
+        #goTitle { font-size: 48px; font-weight: bold; color: white; margin-bottom: 20px; text-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+        #goScore { font-size: 32px; font-weight: bold; color: #ffcc00; margin-bottom: 20px; }
+        #goTime { font-size: 16px; color: #dddddd; margin-bottom: 40px; }
+        #btnRestart { padding: 15px 40px; font-size: 24px; font-weight: bold; color: white; background-color: #e74c3c; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #btnRestart:active { background-color: #c0392b; }
+        #portraitWarning { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #111; color: white; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; font-family: 'Arial', sans-serif; font-size: 24px; font-weight: bold; text-align: center; line-height: 1.5; }
+        @media screen and (orientation: portrait) { #portraitWarning { display: flex; } #gameCanvas, #controls, #gameOverScreen, #startScreen { display: none !important; } }
+    </style>
+</head>
+<body>
+    <div id="portraitWarning">📱<br><br>원활한 플레이를 위해<br>기기를 가로로 회전해 주세요.</div>
+    
+    <!-- 💡 시작 화면 오버레이 -->
+    <div id="startScreen">
+        <div id="startTitle">🚽 화장실 참기 대모험</div>
+        <div id="startDesc">장애물을 피하고 똥을 모아 끝까지 달려보세요!</div>
+        <button id="btnStart">게임 시작 ▶</button>
+    </div>
+
+    <div id="controls">
+        <div id="btnSlide" class="control-btn">슬라이드</div>
+        <div id="btnJump" class="control-btn">점프</div>
+    </div>
+    
+    <div id="gameOverScreen">
+        <div id="goTitle">게임 오버!</div>
+        <div id="goScore">최종 기록: 0m</div>
+        <div id="goTime">기록 일시: </div>
+        <button id="btnRestart">다시 하기 🔄</button>
+    </div>
+    
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const imageSources = {
+            bg: 'bg.jpg',
+            tile: 'tile.png',
+            obs1: 'obs1.png', 
+            obs2: 'obs2.png', 
+            char_run: 'char_run.png', 
+            char_jump: 'char_jump.png',
+            char_slide: 'char_slide.png',
+            char_eat: 'char_eat.png',
+            char_hit: 'char_hit.png',
+            item_normal: 'item_normal.png',
+            item_gold: 'item_gold.png',
+            item_rainbow: 'item_rainbow.png', 
+            effect_star: 'effect_star.png',   
+            effect_sparkle: 'effect_sparkle.png' 
+        };
+
+        const images = {};
+        for (let key in imageSources) {
+            images[key] = new Image();
+            images[key].src = imageSources[key];
+        }
+
+        function isReady(img) { return img && img.complete && img.naturalWidth > 0; }
+
+        let gameStarted = false; // 게임 시작 여부 플래그
+        let isGameOver = false;
+        let baseSpeed = 5.0;
+        let gameSpeed = baseSpeed; 
+        let distance = 0;
+        let frameCount = 0;
+        let bgX = 0; 
+        const groundY = 240; 
+        let aniFrame = 0;
+
+        const player = {
+            x: 100, y: 190, width: 50, height: 50,
+            vy: 0, gravity: 0.6, jumpPower: -11,
+            isJumping: false, isSliding: false,
+            jumpCount: 0, maxJumps: 2, 
+            hp: 100, maxHp: 100, shield: false, invincible: 0,
+            eatTimer: 0, hitTimer: 0
+        };
+
+        let platforms = [{ x: 0, y: groundY, width: 800, height: 40 }];
+        let obstacles = [];
+        let items = [];
+
+        function doJump(e) { 
+            e.preventDefault(); 
+            if (player.jumpCount < player.maxJumps && !isGameOver && gameStarted) { 
+                player.vy = player.jumpPower; 
+                player.isJumping = true; 
+                player.isSliding = false; 
+                player.jumpCount++; 
+                aniFrame = 0; 
+            } 
+        }
+        function startSlide(e) { e.preventDefault(); if (!player.isJumping && !isGameOver && gameStarted) { player.isSliding = true; aniFrame = 0; } }
+        function endSlide(e) { e.preventDefault(); player.isSliding = false; }
+
+        const btnJump = document.getElementById('btnJump');
+        const btnSlide = document.getElementById('btnSlide');
+        btnJump.addEventListener('touchstart', doJump, {passive: false}); btnJump.addEventListener('mousedown', doJump);
+        btnSlide.addEventListener('touchstart', startSlide, {passive: false}); btnSlide.addEventListener('mousedown', startSlide);
+        ['touchend', 'mouseup', 'mouseleave'].forEach(evt => btnSlide.addEventListener(evt, endSlide, {passive: false}));
+        
+        document.getElementById('btnRestart').addEventListener('click', () => location.reload());
+        document.getElementById('btnRestart').addEventListener('touchstart', (e) => { e.preventDefault(); location.reload(); }, {passive: false});
+
+        // 💡 게임 시작 버튼 이벤트
+        const startScreen = document.getElementById('startScreen');
+        const btnStart = document.getElementById('btnStart');
+        const controls = document.getElementById('controls');
+
+        function startGame(e) {
+            e.preventDefault();
+            startScreen.style.display = 'none';
+            controls.style.display = 'flex';
+            gameStarted = true;
+        }
+        btnStart.addEventListener('click', startGame);
+        btnStart.addEventListener('touchstart', startGame, {passive: false});
+
+        function getKSTTime() {
+            return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }).format(new Date());
+        }
+
+        // 💡 오른쪽 위에 띄울 KST 시간 포맷 함수 (초까지 실시간 표시)
+        function getKSTClock() {
+            return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(new Date());
+        }
+
+        function update() {
+            if (!gameStarted || isGameOver) return;
+
+            distance += gameSpeed * 0.01; 
+            
+            // 💡 50m마다 속도 증가
+            gameSpeed = baseSpeed + Math.floor(distance / 50) * 0.6;
+            
+            frameCount++;
+            if(frameCount % 5 === 0) aniFrame++; 
+            
+            // 💡 체력 빨리 닳게 수정 (0.05)
+            player.hp -= 0.05; 
+            
+            if (player.invincible > 0) player.invincible--;
+            if (player.eatTimer > 0) player.eatTimer--;
+            if (player.hitTimer > 0) player.hitTimer--;
+            if (player.hp <= 0) gameOver("체력 고갈!");
+
+            bgX -= gameSpeed * 0.3; if (bgX <= -canvas.width) bgX = 0;
+
+            player.vy += player.gravity; player.y += player.vy;
+            let currentHeight = player.isSliding ? player.height / 2 : player.height;
+            let currentY = player.isSliding ? player.y + (player.height / 2) : player.y;
+
+            updatePlatforms(); updateObstacles(); updateItems();
+
+            let onGround = false;
+            for (let p of platforms) {
+                if (player.x < p.x + p.width && player.x + player.width > p.x &&
+                    currentY + currentHeight >= p.y && currentY + currentHeight <= p.y + player.vy + 2) {
+                    player.y = p.y - player.height; 
+                    player.vy = 0; 
+                    player.isJumping = false; 
+                    player.jumpCount = 0; 
+                    onGround = true;
+                }
+            }
+            
+            if (player.y > canvas.height) gameOver("물에 빠짐! (낙사)");
+        }
+
+        function updatePlatforms() {
+            if (platforms.length === 0 || platforms[platforms.length - 1].x < canvas.width - 250) {
+                let lastP = platforms[platforms.length - 1];
+                let gap = Math.random() > 0.4 ? Math.random() * 120 + 80 : 0; 
+                let width = Math.random() * 200 + 250;
+                platforms.push({ x: lastP ? lastP.x + lastP.width + gap : 0, y: groundY, width: width, height: 40 });
+            }
+            platforms.forEach(p => p.x -= gameSpeed);
+            platforms = platforms.filter(p => p.x + p.width > 0);
+        }
+
+        function updateObstacles() {
+            if (frameCount % Math.floor(100 - gameSpeed * 2) === 0 && Math.random() > 0.4) {
+                let isAir = Math.random() > 0.4; 
+                let isDouble = !isAir && Math.random() > 0.5; 
+                
+                let imgKey = isDouble ? 'obs2' : 'obs1';
+                let obsW = 40;
+                let obsH = isDouble ? 80 : 40; 
+                let obsY = isAir ? groundY - 70 : groundY - obsH; 
+                
+                obstacles.push({ x: canvas.width, y: obsY, width: obsW, height: obsH, isAir: isAir, imgKey: imgKey }); 
+            }
+            for (let i = 0; i < obstacles.length; i++) {
+                let obs = obstacles[i]; obs.x -= gameSpeed;
+                
+                let currentHeight = player.isSliding ? player.height / 2 : player.height;
+                let currentY = player.isSliding ? player.y + (player.height / 2) : player.y;
+
+                let px = player.x + 15;
+                let pw = player.width - 30; 
+                let py = currentY + 5;
+                let ph = currentHeight - 10;
+
+                let ox = obs.x + 10;
+                let oy = obs.y + 5;
+                let ow = obs.width - 20;
+                let oh = obs.height - 10;
+
+                if (px < ox + ow && px + pw > ox && py < oy + oh && py + ph > oy) {
+                    if (player.invincible > 0) { } 
+                    else if (player.shield) { player.shield = false; player.invincible = 60; player.hitTimer = 15; } 
+                    else { player.hp -= 20; player.invincible = 60; player.hitTimer = 15; }
+                    obstacles.splice(i, 1); i--;
+                }
+            }
+            obstacles = obstacles.filter(obs => obs.x + obs.width > 0);
+        }
+
+        function updateItems() {
+            // 💡 전체 아이템 빈도 감소 (300프레임마다) 및 황금/무지개 확률 대폭 축소
+            if (frameCount % 300 === 0) {
+                let rand = Math.random(); 
+                let type = rand > 0.98 ? 'rainbow' : (rand > 0.94 ? 'gold' : 'normal');
+                items.push({ x: canvas.width, y: groundY - 110 - Math.random() * 40, width: 40, height: 40, type: type });
+            }
+            for (let i = 0; i < items.length; i++) {
+                let item = items[i]; item.x -= gameSpeed;
+                
+                let currentHeight = player.isSliding ? player.height / 2 : player.height;
+                let currentY = player.isSliding ? player.y + (player.height / 2) : player.y;
+
+                if (player.x < item.x + item.width && player.x + player.width > item.x && currentY < item.y + item.height && currentY + currentHeight > item.y) {
+                    if (item.type === 'normal') player.hp = Math.min(player.maxHp, player.hp + 15);
+                    else if (item.type === 'gold') player.shield = true;
+                    else if (item.type === 'rainbow') player.invincible = 300; 
+                    player.eatTimer = 20; 
+                    items.splice(i, 1); i--;
+                }
+            }
+            items = items.filter(item => item.x + item.width > 0);
+        }
+
+        function gameOver(reason) {
+            isGameOver = true; goTitle.innerText = reason; goScore.innerText = `최종 기록: ${Math.floor(distance)}m`; goTime.innerText = `기록 일시: ${getKSTTime()}`;
+            document.getElementById('gameOverScreen').style.display = 'flex'; controls.style.display = 'none';
+        }
+
+        function drawSprite(imgKey, x, y, targetW, targetH) {
+            let img = images[imgKey];
+            if (!isReady(img)) return false;
+
+            let frames = 1;
+            if (imgKey === 'char_run') frames = 12;
+            else if (imgKey === 'char_jump') frames = 6;
+            else if (imgKey === 'char_slide') frames = 7;
+            else if (imgKey === 'char_eat') frames = 8;
+            else if (imgKey === 'char_hit') frames = 4;
+            else frames = Math.max(1, Math.round(img.width / img.height)); 
+
+            let frameWidth = img.width / frames;
+            let currentFrame = aniFrame % frames;
+            
+            let pad = imgKey.startsWith('char_') ? 10 : 0;
+            
+            let cropX = (currentFrame * frameWidth) + pad;
+            let cropY = 0;
+            let cropW = frameWidth - (pad * 2);
+            let cropH = img.height;
+
+            ctx.drawImage(img, cropX, cropY, cropW, cropH, x, y, targetW, targetH);
+            return true;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (isReady(images.bg)) {
+                ctx.drawImage(images.bg, bgX, 0, canvas.width, canvas.height);
+                ctx.drawImage(images.bg, bgX + canvas.width, 0, canvas.width, canvas.height);
+            }
+
+            platforms.forEach(p => {
+                if (isReady(images.tile)) {
+                    let tileImg = images.tile;
+                    let tileW = 40; 
+                    let overlap = 2; 
+                    for(let i=0; i < p.width; i += (tileW - overlap)) {
+                        let drawW = Math.min(tileW, p.width - i);
+                        ctx.drawImage(tileImg, 0, 0, tileImg.width, tileImg.height, p.x + i, p.y, drawW + overlap, 40);
+                    }
+                } else {
+                    ctx.fillStyle = '#2d2d2d'; ctx.fillRect(p.x, p.y, p.width, p.height);
+                }
+            });
+
+            obstacles.forEach(obs => {
+                if (!drawSprite(obs.imgKey, obs.x, obs.y, obs.width, obs.height)) {
+                    ctx.fillStyle = 'white'; ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                }
+            });
+
+            items.forEach(item => {
+                let imgKey = 'item_' + item.type; 
+                if (!drawSprite(imgKey, item.x, item.y, item.width, item.height)) {
+                    ctx.fillStyle = item.type==='rainbow'?'purple':(item.type==='gold'?'gold':'brown');
+                    ctx.beginPath(); ctx.arc(item.x + item.width/2, item.y + item.height/2, item.width/2, 0, Math.PI * 2); ctx.fill();
+                }
+            });
+
+            let charImgKey = 'char_run';
+            if (player.hitTimer > 0) charImgKey = 'char_hit';
+            else if (player.eatTimer > 0) charImgKey = 'char_eat';
+            else if (player.isSliding) charImgKey = 'char_slide';
+            else if (player.isJumping) charImgKey = 'char_jump';
+
+            let currentHeight = player.isSliding ? player.height / 2 : player.height;
+            let currentY = player.isSliding ? player.y + (player.height / 2) : player.y;
+
+            if (player.shield) {
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.4)'; ctx.fillRect(player.x, currentY, player.width, currentHeight);
+            }
+
+            let drawY = player.isSliding ? player.y + (player.height / 2) : player.y;
+            let drawH = player.isSliding ? player.height / 2 : player.height;
+
+            if (!drawSprite(charImgKey, player.x, drawY, player.width, drawH)) {
+                ctx.fillStyle = player.shield ? 'gold' : 'white';
+                ctx.fillRect(player.x, currentY, player.width, currentHeight);
+            }
+
+            if (player.hitTimer > 0 && isReady(images.effect_star)) {
+                ctx.drawImage(images.effect_star, player.x, player.y - 40, 40, 40);
+            } else if (player.invincible > 0 && isReady(images.effect_sparkle)) {
+                let angle = frameCount * 0.2;
+                let effectX = player.x + Math.cos(angle) * 30;
+                let effectY = player.y + Math.sin(angle) * 30;
+                ctx.drawImage(images.effect_sparkle, effectX, effectY, 30, 30);
+            }
+
+            // 💡 UI 렌더링 (왼쪽 위: 거리 및 상태/체력바, 오른쪽 위: KST 현재 시간)
+            ctx.fillStyle = 'white'; ctx.font = 'bold 22px Arial'; ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
+            
+            // 왼쪽 위
+            ctx.textAlign = 'left';
+            ctx.fillText(`거리: ${Math.floor(distance)}m`, 20, 40);
+            let statusText = player.invincible > 0 ? "🌈 무적!" : (player.shield ? "🛡️ 보호막" : "정상");
+            ctx.fillText(`상태: ${statusText}`, 20, 110);
+            ctx.fillText(`체력:`, 20, 75);
+            
+            ctx.shadowColor = 'transparent'; ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.fillRect(75, 57, 180, 20);
+            let hpPercent = Math.max(0, player.hp);
+            if (hpPercent > 50) ctx.fillStyle = '#2ecc71'; else if (hpPercent > 20) ctx.fillStyle = '#f1c40f'; else ctx.fillStyle = '#e74c3c'; 
+            ctx.fillRect(75, 57, 180 * (hpPercent / 100), 20);
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.strokeRect(75, 57, 180, 20);
+
+            // 💡 오른쪽 위 KST 시계 표시
+            ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 20px Arial';
+            ctx.fillText(`⏰ ${getKSTClock()}`, canvas.width - 20, 40);
+        }
+
+        function loop() { update(); draw(); requestAnimationFrame(loop); }
+        window.onload = () => { loop(); };
+    </script>
+</body>
+</html>
