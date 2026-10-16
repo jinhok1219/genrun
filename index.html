@@ -436,24 +436,25 @@
                 ctx.drawImage(images.effect_sparkle, effectX, effectY, 30, 30);
             }
 
+            // 💡 상단 주소창에 가리지 않도록 UI 위치를 아래쪽(Y좌표)으로 넉넉하게 내림
             ctx.fillStyle = 'white'; ctx.font = 'bold 22px Arial'; ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
             
             ctx.textAlign = 'left';
-            ctx.fillText(`거리: ${Math.floor(distance)}m`, 20, 40);
+            ctx.fillText(`거리: ${Math.floor(distance)}m`, 20, 65);
             let statusText = player.invincible > 0 ? "🌈 무적!" : (player.shield ? "🛡️ 보호막" : "정상");
-            ctx.fillText(`상태: ${statusText}`, 20, 110);
-            ctx.fillText(`체력:`, 20, 75);
+            ctx.fillText(`상태: ${statusText}`, 20, 135);
+            ctx.fillText(`체력:`, 20, 100);
             
-            ctx.shadowColor = 'transparent'; ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.fillRect(75, 57, 180, 20);
+            ctx.shadowColor = 'transparent'; ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.fillRect(75, 82, 180, 20);
             let hpPercent = Math.max(0, player.hp);
             if (hpPercent > 50) ctx.fillStyle = '#2ecc71'; else if (hpPercent > 20) ctx.fillStyle = '#f1c40f'; else ctx.fillStyle = '#e74c3c'; 
-            ctx.fillRect(75, 57, 180 * (hpPercent / 100), 20);
-            ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.strokeRect(75, 57, 180, 20);
+            ctx.fillRect(75, 82, 180 * (hpPercent / 100), 20);
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.strokeRect(75, 82, 180, 20);
 
             ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
             ctx.textAlign = 'right';
             ctx.font = 'bold 20px Arial';
-            ctx.fillText(`⏰ ${getKSTClock()}`, canvas.width - 20, 40);
+            ctx.fillText(`⏰ ${getKSTClock()}`, canvas.width - 20, 65);
         }
 
         function loop() { update(); draw(); requestAnimationFrame(loop); }
