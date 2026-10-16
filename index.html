@@ -2,22 +2,79 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>GEN RUN</title>
-
-    <!-- 💡 메신저 미리보기 제목/설명 강제 지정 태그 -->
     <meta property="og:title" content="GEN RUN">
     <meta property="og:description" content="재미있는 웹 런닝 게임!">
-
     <style>
-        body { margin: 0; padding: 0; background-color: #222; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; touch-action: none; }
-        canvas { max-width: 100%; max-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.8); background-color: #0066cc; }
-        #controls { position: absolute; bottom: 20%; width: 100%; max-width: 800px; display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; z-index: 10; display: none; }
-        .control-btn { width: 90px; height: 90px; background-color: rgba(100, 100, 100, 0.5); border: 4px solid rgba(255, 255, 255, 0.8); border-radius: 50%; font-size: 18px; font-weight: bold; color: white; text-shadow: 1px 1px 3px black; text-align: center; line-height: 82px; user-select: none; -webkit-user-select: none; backdrop-filter: blur(4px); }
+        /* 💡 모바일 화면 꽉 참 및 스크롤 방지 스타일 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: fixed;
+            touch-action: none;
+        }
+        
+        /* 💡 캔버스가 모바일 화면 가로/세로 비율에 맞춰 꽉 차게 반응하도록 수정 */
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;
+            background-color: #0066cc;
+        }
+
+        #controls { 
+            position: absolute; 
+            bottom: 10%; 
+            width: 100%; 
+            max-width: 800px; 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 0 40px; 
+            box-sizing: border-box; 
+            z-index: 10; 
+            display: none; 
+        }
+        .control-btn { 
+            width: 85px; 
+            height: 85px; 
+            background-color: rgba(100, 100, 100, 0.5); 
+            border: 4px solid rgba(255, 255, 255, 0.8); 
+            border-radius: 50%; 
+            font-size: 18px; 
+            font-weight: bold; 
+            color: white; 
+            text-shadow: 1px 1px 3px black; 
+            text-align: center; 
+            line-height: 77px; 
+            user-select: none; 
+            -webkit-user-select: none; 
+            backdrop-filter: blur(4px); 
+        }
         .control-btn:active { background-color: rgba(200, 200, 200, 0.7); }
         
-        /* 💡 시작 화면 스타일 */
-        #startScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('bg.jpg') no-repeat center center; background-size: cover; z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'Arial', sans-serif; }
+        #startScreen { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('bg.jpg') no-repeat center center; 
+            background-size: cover; 
+            z-index: 200; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            font-family: 'Arial', sans-serif; 
+        }
         #startTitle { font-size: 56px; font-weight: bold; color: white; margin-bottom: 10px; text-shadow: 3px 3px 10px rgba(0,0,0,0.8); text-align: center; }
         #startDesc { font-size: 20px; color: #ffcc00; margin-bottom: 40px; text-shadow: 2px 2px 5px rgba(0,0,0,0.8); }
         #btnStart { padding: 18px 50px; font-size: 26px; font-weight: bold; color: white; background-color: #2ecc71; border: none; border-radius: 35px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: transform 0.1s; }
@@ -29,6 +86,7 @@
         #goTime { font-size: 16px; color: #dddddd; margin-bottom: 40px; }
         #btnRestart { padding: 15px 40px; font-size: 24px; font-weight: bold; color: white; background-color: #e74c3c; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         #btnRestart:active { background-color: #c0392b; }
+        
         #portraitWarning { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #111; color: white; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; font-family: 'Arial', sans-serif; font-size: 24px; font-weight: bold; text-align: center; line-height: 1.5; }
         @media screen and (orientation: portrait) { #portraitWarning { display: flex; } #gameCanvas, #controls, #gameOverScreen, #startScreen { display: none !important; } }
     </style>
@@ -36,9 +94,8 @@
 <body>
     <div id="portraitWarning">📱<br><br>원활한 플레이를 위해<br>기기를 가로로 회전해 주세요.</div>
     
-    <!-- 💡 시작 화면 오버레이 -->
     <div id="startScreen">
-        <div id="startTitle">🚽 화장실 참기 대모험</div>
+        <div id="startTitle">🚽 GEN RUN</div>
         <div id="startDesc">장애물을 피하고 똥을 모아 끝까지 달려보세요!</div>
         <button id="btnStart">게임 시작 ▶</button>
     </div>
@@ -86,7 +143,7 @@
 
         function isReady(img) { return img && img.complete && img.naturalWidth > 0; }
 
-        let gameStarted = false; // 게임 시작 여부 플래그
+        let gameStarted = false;
         let isGameOver = false;
         let baseSpeed = 5.0;
         let gameSpeed = baseSpeed; 
@@ -131,7 +188,6 @@
         document.getElementById('btnRestart').addEventListener('click', () => location.reload());
         document.getElementById('btnRestart').addEventListener('touchstart', (e) => { e.preventDefault(); location.reload(); }, {passive: false});
 
-        // 💡 게임 시작 버튼 이벤트
         const startScreen = document.getElementById('startScreen');
         const btnStart = document.getElementById('btnStart');
         const controls = document.getElementById('controls');
@@ -141,6 +197,11 @@
             startScreen.style.display = 'none';
             controls.style.display = 'flex';
             gameStarted = true;
+            
+            // 모바일 전체화면 시도 (지원되는 브라우저인 경우)
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
         }
         btnStart.addEventListener('click', startGame);
         btnStart.addEventListener('touchstart', startGame, {passive: false});
@@ -149,7 +210,6 @@
             return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }).format(new Date());
         }
 
-        // 💡 오른쪽 위에 띄울 KST 시간 포맷 함수 (초까지 실시간 표시)
         function getKSTClock() {
             return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(new Date());
         }
@@ -158,14 +218,11 @@
             if (!gameStarted || isGameOver) return;
 
             distance += gameSpeed * 0.01; 
-            
-            // 💡 50m마다 속도 증가
             gameSpeed = baseSpeed + Math.floor(distance / 50) * 0.6;
             
             frameCount++;
             if(frameCount % 5 === 0) aniFrame++; 
             
-            // 💡 체력 빨리 닳게 수정 (0.05)
             player.hp -= 0.05; 
             
             if (player.invincible > 0) player.invincible--;
@@ -246,10 +303,9 @@
         }
 
         function updateItems() {
-            // 💡 전체 아이템 빈도 감소 (300프레임마다) 및 황금/무지개 확률 대폭 축소
-            if (frameCount % 300 === 0) {
+            if (frameCount % 250 === 0) {
                 let rand = Math.random(); 
-                let type = rand > 0.98 ? 'rainbow' : (rand > 0.94 ? 'gold' : 'normal');
+                let type = rand > 0.9 ? 'rainbow' : (rand > 0.8 ? 'gold' : 'normal');
                 items.push({ x: canvas.width, y: groundY - 110 - Math.random() * 40, width: 40, height: 40, type: type });
             }
             for (let i = 0; i < items.length; i++) {
@@ -366,10 +422,8 @@
                 ctx.drawImage(images.effect_sparkle, effectX, effectY, 30, 30);
             }
 
-            // 💡 UI 렌더링 (왼쪽 위: 거리 및 상태/체력바, 오른쪽 위: KST 현재 시간)
             ctx.fillStyle = 'white'; ctx.font = 'bold 22px Arial'; ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
             
-            // 왼쪽 위
             ctx.textAlign = 'left';
             ctx.fillText(`거리: ${Math.floor(distance)}m`, 20, 40);
             let statusText = player.invincible > 0 ? "🌈 무적!" : (player.shield ? "🛡️ 보호막" : "정상");
@@ -382,7 +436,6 @@
             ctx.fillRect(75, 57, 180 * (hpPercent / 100), 20);
             ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.strokeRect(75, 57, 180, 20);
 
-            // 💡 오른쪽 위 KST 시계 표시
             ctx.shadowColor = 'black'; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2;
             ctx.textAlign = 'right';
             ctx.font = 'bold 20px Arial';
