@@ -145,7 +145,7 @@
 
         let gameStarted = false;
         let isGameOver = false;
-        let baseSpeed = 5.0;
+        let baseSpeed = 4.0;
         let gameSpeed = baseSpeed; 
         let distance = 0;
         let frameCount = 0;
@@ -223,7 +223,7 @@
             frameCount++;
             if(frameCount % 5 === 0) aniFrame++; 
             
-            player.hp -= 0.05; 
+            player.hp -= 0.04; 
             
             if (player.invincible > 0) player.invincible--;
             if (player.eatTimer > 0) player.eatTimer--;
