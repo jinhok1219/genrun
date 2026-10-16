@@ -21,11 +21,11 @@
             touch-action: none;
         }
         
-        /* 💡 화면 크기에 맞춰 꽉 차게 조절되도록 수정 */
+        /* 💡 위쪽(하늘과 땅)이 잘리지 않도록 object-fit을 contain으로 변경하여 전체 화면 비율 유지 */
         canvas {
             width: 100vw;
             height: 100vh;
-            object-fit: cover;
+            object-fit: contain;
             background-color: #0066cc;
         }
 
@@ -119,18 +119,16 @@
         </div>
     </div>
     
-    <canvas id="gameCanvas"></canvas>
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // 💡 화면 크기 비율 실시간 반영 함수
         function resizeGame() {
-            canvas.width = Math.max(window.innerWidth, window.innerHeight);
-            canvas.height = Math.min(window.innerWidth, window.innerHeight);
+            canvas.width = 800;
+            canvas.height = 450;
         }
-        window.addEventListener('resize', resizeGame);
         resizeGame();
 
         const imageSources = {
@@ -166,28 +164,21 @@
         let frameCount = 0;
         let bgX = 0; 
         
-        let groundY = canvas.height - 180; 
+        const groundY = 280; // 💡 땅 위치를 더 아래로 내겨서 위쪽 하늘과 장애물이 넓게 보이도록 조정
         let aniFrame = 0;
 
         const player = {
-            x: 100, y: 0, width: 60, height: 60,
-            vy: 0, gravity: 0.6, jumpPower: -12,
+            x: 100, y: groundY - 50, width: 50, height: 50,
+            vy: 0, gravity: 0.6, jumpPower: -11,
             isJumping: false, isSliding: false,
             jumpCount: 0, maxJumps: 2, 
             hp: 100, maxHp: 100, shield: false, invincible: 0,
             eatTimer: 0, hitTimer: 0
         };
 
-        let platforms = [];
+        let platforms = [{ x: 0, y: groundY, width: 800, height: 40 }];
         let obstacles = [];
         let items = [];
-
-        function initGameValues() {
-            resizeGame();
-            groundY = canvas.height - 180;
-            player.y = groundY - player.height;
-            platforms = [{ x: 0, y: groundY, width: canvas.width * 2, height: 40 }];
-        }
 
         function doJump(e) { 
             e.preventDefault(); 
@@ -208,18 +199,14 @@
         btnSlide.addEventListener('touchstart', startSlide, {passive: false}); btnSlide.addEventListener('mousedown', startSlide);
         ['touchend', 'mouseup', 'mouseleave'].forEach(evt => btnSlide.addEventListener(evt, endSlide, {passive: false}));
         
-        // 다시 하기 버튼
         document.getElementById('btnRestart').addEventListener('click', () => {
-            initGameValues();
             location.reload();
         });
         document.getElementById('btnRestart').addEventListener('touchstart', (e) => { 
             e.preventDefault(); 
-            initGameValues();
             location.reload(); 
         }, {passive: false});
 
-        // 처음으로 버튼
         function goHome(e) {
             e.preventDefault();
             if (document.fullscreenElement && document.exitFullscreen) {
@@ -236,7 +223,6 @@
 
         function startGame(e) {
             e.preventDefault();
-            initGameValues();
             startScreen.style.display = 'none';
             controls.style.display = 'flex';
             gameStarted = true;
@@ -299,7 +285,7 @@
             if (platforms.length === 0 || platforms[platforms.length - 1].x < canvas.width - 250) {
                 let lastP = platforms[platforms.length - 1];
                 let gap = Math.random() > 0.4 ? Math.random() * 120 + 80 : 0; 
-                let width = Math.random() * 200 + 300;
+                let width = Math.random() * 200 + 250;
                 platforms.push({ x: lastP ? lastP.x + lastP.width + gap : 0, y: groundY, width: width, height: 40 });
             }
             platforms.forEach(p => p.x -= gameSpeed);
@@ -312,9 +298,9 @@
                 let isDouble = !isAir && Math.random() > 0.5; 
                 
                 let imgKey = isDouble ? 'obs2' : 'obs1';
-                let obsW = 45;
-                let obsH = isDouble ? 90 : 45; 
-                let obsY = isAir ? groundY - 75 : groundY - obsH; 
+                let obsW = 40;
+                let obsH = isDouble ? 80 : 40; 
+                let obsY = isAir ? groundY - 70 : groundY - obsH; 
                 
                 obstacles.push({ x: canvas.width, y: obsY, width: obsW, height: obsH, isAir: isAir, imgKey: imgKey }); 
             }
@@ -348,7 +334,7 @@
             if (frameCount % 250 === 0) {
                 let rand = Math.random(); 
                 let type = rand > 0.9 ? 'rainbow' : (rand > 0.8 ? 'gold' : 'normal');
-                items.push({ x: canvas.width, y: groundY - 130 - Math.random() * 40, width: 45, height: 45, type: type });
+                items.push({ x: canvas.width, y: groundY - 110 - Math.random() * 40, width: 40, height: 40, type: type });
             }
             for (let i = 0; i < items.length; i++) {
                 let item = items[i]; item.x -= gameSpeed;
@@ -489,10 +475,7 @@
         }
 
         function loop() { update(); draw(); requestAnimationFrame(loop); }
-        window.onload = () => { 
-            initGameValues();
-            loop(); 
-        };
+        window.onload = () => { loop(); };
     </script>
 </body>
 </html>
