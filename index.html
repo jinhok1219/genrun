@@ -206,16 +206,6 @@
             location.reload(); 
         }, {passive: false});
 
-        function goHome(e) {
-            e.preventDefault();
-            if (document.fullscreenElement && document.exitFullscreen) {
-                document.exitFullscreen().catch(() => {});
-            }
-            location.reload();
-        }
-        document.getElementById('btnHome').addEventListener('click', goHome);
-        document.getElementById('btnHome').addEventListener('touchstart', goHome, {passive: false});
-
         const startScreen = document.getElementById('startScreen');
         const btnStart = document.getElementById('btnStart');
         const controls = document.getElementById('controls');
